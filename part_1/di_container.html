@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>With DI Container</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input { padding: 5px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <h1>Hello <span data-bind="name"></span>!</h1>
+    <input type="text" data-model="name" placeholder="Enter your name">
+    <p>Your score is <span data-bind="score"></span></p>
+    <p>Time from Service: <span data-bind="clockService.now()"></span></p>
+  </div>
+
+  <button onclick="changeScore()">Increase Score</button>
+
+  <script>
+    // Simple DI Container
+    class DIContainer {
+      constructor() {
+        this.factories = {};
+        this.instances = {};
+      }
+
+      register(name, factoryFn) {
+        this.factories[name] = factoryFn;
+      }
+
+      get(name) {
+        if (!this.instances[name]) {
+          const factory = this.factories[name];
+          if (!factory) throw new Error(`Service '${name}' not registered`);
+          this.instances[name] = factory(this); // inject container if needed
+        }
+        return this.instances[name];
+      }
+    }
+
+    // TemplateEngine (with DI)
+    class TemplateEngine {
+      constructor(scope = {}, rootElement, di) {
+        this.scope = scope;
+        this.root = rootElement;
+        this.di = di;
+
+        // Inject services ke scope (readonly)
+        for (const key in di.factories) {
+          Object.defineProperty(this.scope, key, {
+            get: () => di.get(key)
+          });
+        }
+
+        this.initBindings();
+        this.updateView();
+      }
+
+      initBindings() {
+        const inputs = this.root.querySelectorAll('[data-model]');
+        inputs.forEach(input => {
+          const key = input.getAttribute('data-model');
+          input.value = this.scope[key] || '';
+
+          input.addEventListener('input', () => {
+            this.scope[key] = input.value;
+            this.updateView();
+          });
+        });
+      }
+
+      updateView() {
+        const bound = this.root.querySelectorAll('[data-bind]');
+        bound.forEach(el => {
+          const expr = el.getAttribute('data-bind');
+          try {
+            const func = new Function(...Object.keys(this.scope), `return ${expr}`);
+            el.textContent = func(...Object.values(this.scope));
+          } catch {
+            el.textContent = '';
+          }
+        });
+
+        // Update input if needed
+        const inputs = this.root.querySelectorAll('[data-model]');
+        inputs.forEach(input => {
+          const key = input.getAttribute('data-model');
+          if (document.activeElement !== input) {
+            input.value = this.scope[key] || '';
+          }
+        });
+      }
+
+      set(key, value) {
+        this.scope[key] = value;
+        this.updateView();
+      }
+    }
+
+    // Setup container and service
+    const container = new DIContainer();
+
+    container.register('clockService', () => ({
+      now: () => new Date().toLocaleTimeString()
+    }));
+
+    // Scope awal dan instansiasi
+    const app = document.getElementById('app');
+    const engine = new TemplateEngine({ name: 'Eko', score: 90 }, app, container);
+
+    function changeScore() {
+      engine.set('score', engine.scope.score + 10);
+    }
+
+    // Optional: auto-update time every second
+    setInterval(() => engine.updateView(), 1000);
+  </script>
+
+</body>
+</html>

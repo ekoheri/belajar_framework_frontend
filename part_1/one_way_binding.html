@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>One-Way Binding Template</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <h1>Hello {{ name }}!</h1>
+    <p>Today is {{ new Date().toDateString() }}</p>
+    <p>Your score: {{ score + 10 }}</p>
+  </div>
+
+  <button onclick="changeName()">Change Name</button>
+
+  <script>
+    class TemplateEngine {
+      constructor(scope = {}, element) {
+        this.scope = scope;
+        this.element = element;
+        this.originalTemplate = element.innerHTML;
+        this.renderToElement(); // Initial render
+      }
+
+      render(template) {
+        return template.replace(/{{\s*(.*?)\s*}}/g, (match, expr) => {
+          try {
+            const func = new Function(...Object.keys(this.scope), `return ${expr}`);
+            return func(...Object.values(this.scope));
+          } catch (e) {
+            return '';
+          }
+        });
+      }
+
+      renderToElement() {
+        this.element.innerHTML = this.render(this.originalTemplate);
+      }
+
+      set(key, value) {
+        this.scope[key] = value;
+        this.renderToElement(); // Re-render after update
+      }
+    }
+
+    // Setup
+    const app = document.getElementById('app');
+    const engine = new TemplateEngine({ name: 'Eko', score: 90 }, app);
+
+    // Demo: update value
+    function changeName() {
+      engine.set('name', 'Eko Heri');
+    }
+  </script>
+
+</body>
+</html>

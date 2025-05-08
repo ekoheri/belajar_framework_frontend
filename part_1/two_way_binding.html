@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Two-Way Binding Fixed</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input { padding: 5px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <h1>Hello <span data-bind="name"></span>!</h1>
+    <input type="text" data-model="name" placeholder="Enter your name">
+    <p>Your score is <span data-bind="score"></span></p>
+  </div>
+
+  <button onclick="changeScore()">Increase Score</button>
+
+  <script>
+    class TemplateEngine {
+      constructor(scope = {}, rootElement) {
+        this.scope = scope;
+        this.root = rootElement;
+        this.initBindings();
+        this.updateView();
+      }
+
+      initBindings() {
+        const inputs = this.root.querySelectorAll('[data-model]');
+        inputs.forEach(input => {
+          const key = input.getAttribute('data-model');
+          input.value = this.scope[key] || '';
+
+          input.addEventListener('input', () => {
+            this.scope[key] = input.value;
+            this.updateView();
+          });
+        });
+      }
+
+      updateView() {
+        const bound = this.root.querySelectorAll('[data-bind]');
+        bound.forEach(el => {
+          const key = el.getAttribute('data-bind');
+          try {
+            el.textContent = new Function(...Object.keys(this.scope), `return ${key}`)(...Object.values(this.scope));
+          } catch {
+            el.textContent = '';
+          }
+        });
+
+        // Also update values in input fields
+        const inputs = this.root.querySelectorAll('[data-model]');
+        inputs.forEach(input => {
+          const key = input.getAttribute('data-model');
+          if (document.activeElement !== input) {
+            input.value = this.scope[key] || '';
+          }
+        });
+      }
+
+      set(key, value) {
+        this.scope[key] = value;
+        this.updateView();
+      }
+    }
+
+    const app = document.getElementById('app');
+    const engine = new TemplateEngine({ name: 'Eko', score: 90 }, app);
+
+    function changeScore() {
+      engine.set('score', engine.scope.score + 10);
+    }
+  </script>
+
+</body>
+</html>
