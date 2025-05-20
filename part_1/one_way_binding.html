@@ -19,8 +19,8 @@
 
   <script>
     class TemplateEngine {
-      constructor(scope = {}, element) {
-        this.scope = scope;
+      constructor(state = {}, element) {
+        this.state = state;
         this.element = element;
         this.originalTemplate = element.innerHTML;
         this.renderToElement(); // Initial render
@@ -29,8 +29,8 @@
       render(template) {
         return template.replace(/{{\s*(.*?)\s*}}/g, (match, expr) => {
           try {
-            const func = new Function(...Object.keys(this.scope), `return ${expr}`);
-            return func(...Object.values(this.scope));
+            const func = new Function(...Object.keys(this.state), `return ${expr}`);
+            return func(...Object.values(this.state));
           } catch (e) {
             return '';
           }
@@ -42,7 +42,7 @@
       }
 
       set(key, value) {
-        this.scope[key] = value;
+        this.state[key] = value;
         this.renderToElement(); // Re-render after update
       }
     }

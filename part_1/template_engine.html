@@ -2,30 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mini Angular Template (Class Version)</title>
+  <title>Mini React-style Template</title>
   <style>
     body { font-family: sans-serif; padding: 20px; }
   </style>
 </head>
 <body>
-
+  
   <div id="app">
     <h1>Hello {{ name }}!</h1>
     <p>Today is {{ new Date().toDateString() }}</p>
-    <p>Your score: {{ score + 10 }}</p>
+    <p>Your score: {{ score + 200 }}</p>
   </div>
 
   <script>
     class TemplateEngine {
-      constructor(scope = {}) {
-        this.scope = scope;
+      constructor(state = {}) {
+        this.state = state;
       }
 
       render(template) {
         return template.replace(/{{\s*(.*?)\s*}}/g, (match, expr) => {
           try {
-            const func = new Function(...Object.keys(this.scope), `return ${expr}`);
-            return func(...Object.values(this.scope));
+            const func = new Function(...Object.keys(this.state), `return ${expr}`);
+            return func(...Object.values(this.state));
           } catch (e) {
             return '';
           }
@@ -38,15 +38,16 @@
       }
     }
 
-    // Data
-    const scope = {
+    // State
+    const state = {
       name: 'Eko Heri',
+      address : 'Malang',
       score: 90
     };
 
-    // Jalankan
+    // Render
     const app = document.getElementById('app');
-    const engine = new TemplateEngine(scope);
+    const engine = new TemplateEngine(state);
     engine.renderToElement(app);
   </script>
 

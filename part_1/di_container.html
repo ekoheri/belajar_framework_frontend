@@ -11,10 +11,11 @@
 <body>
 
   <div id="app">
+    <h3>Time from Service: <span data-bind="today"></span></h3>
+    <p>&nbsp;</p>
     <h1>Hello <span data-bind="name"></span>!</h1>
     <input type="text" data-model="name" placeholder="Enter your name">
     <p>Your score is <span data-bind="score"></span></p>
-    <p>Time from Service: <span data-bind="clockService.now()"></span></p>
   </div>
 
   <button onclick="changeScore()">Increase Score</button>
@@ -33,24 +34,23 @@
 
       get(name) {
         if (!this.instances[name]) {
-          const factory = this.factories[name];
+        const factory = this.factories[name];
           if (!factory) throw new Error(`Service '${name}' not registered`);
-          this.instances[name] = factory(this); // inject container if needed
-        }
+            this.instances[name] = factory(this);
+          }
         return this.instances[name];
       }
     }
 
     // TemplateEngine (with DI)
     class TemplateEngine {
-      constructor(scope = {}, rootElement, di) {
-        this.scope = scope;
+      constructor(state = {}, rootElement, di) {
+        this.state = state;
         this.root = rootElement;
         this.di = di;
 
-        // Inject services ke scope (readonly)
         for (const key in di.factories) {
-          Object.defineProperty(this.scope, key, {
+          Object.defineProperty(this.state, key, {
             get: () => di.get(key)
           });
         }
@@ -63,10 +63,9 @@
         const inputs = this.root.querySelectorAll('[data-model]');
         inputs.forEach(input => {
           const key = input.getAttribute('data-model');
-          input.value = this.scope[key] || '';
-
+          input.value = this.state[key] || '';
           input.addEventListener('input', () => {
-            this.scope[key] = input.value;
+            this.state[key] = input.value;
             this.updateView();
           });
         });
@@ -77,25 +76,24 @@
         bound.forEach(el => {
           const expr = el.getAttribute('data-bind');
           try {
-            const func = new Function(...Object.keys(this.scope), `return ${expr}`);
-            el.textContent = func(...Object.values(this.scope));
+            const func = new Function(...Object.keys(this.state), `return ${expr}`);
+            el.textContent = func(...Object.values(this.state));
           } catch {
             el.textContent = '';
           }
         });
 
-        // Update input if needed
         const inputs = this.root.querySelectorAll('[data-model]');
         inputs.forEach(input => {
           const key = input.getAttribute('data-model');
           if (document.activeElement !== input) {
-            input.value = this.scope[key] || '';
+            input.value = this.state[key] || '';
           }
         });
       }
 
       set(key, value) {
-        this.scope[key] = value;
+        this.state[key] = value;
         this.updateView();
       }
     }
@@ -107,16 +105,26 @@
       now: () => new Date().toLocaleTimeString()
     }));
 
-    // Scope awal dan instansiasi
+    // auto-update time every second
+    setInterval(() => {
+      engine.set('today', container.get('clockService').now());
+    }, 1000);
+
+    // state awal dan instansiasi
     const app = document.getElementById('app');
-    const engine = new TemplateEngine({ name: 'Eko', score: 90 }, app, container);
+    const engine = new TemplateEngine(
+      { 
+        name: 'Eko', 
+        score: 90,
+        today: container.get('clockService').now(), 
+      }, 
+      app, 
+      container
+    );
 
     function changeScore() {
-      engine.set('score', engine.scope.score + 10);
+      engine.set('score', engine.state.score + 10);
     }
-
-    // Optional: auto-update time every second
-    setInterval(() => engine.updateView(), 1000);
   </script>
 
 </body>

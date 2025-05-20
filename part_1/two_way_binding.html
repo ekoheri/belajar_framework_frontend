@@ -20,8 +20,8 @@
 
   <script>
     class TemplateEngine {
-      constructor(scope = {}, rootElement) {
-        this.scope = scope;
+      constructor(state = {}, rootElement) {
+        this.state = state;
         this.root = rootElement;
         this.initBindings();
         this.updateView();
@@ -31,10 +31,10 @@
         const inputs = this.root.querySelectorAll('[data-model]');
         inputs.forEach(input => {
           const key = input.getAttribute('data-model');
-          input.value = this.scope[key] || '';
+          input.value = this.state[key] || '';
 
           input.addEventListener('input', () => {
-            this.scope[key] = input.value;
+            this.state[key] = input.value;
             this.updateView();
           });
         });
@@ -45,7 +45,7 @@
         bound.forEach(el => {
           const key = el.getAttribute('data-bind');
           try {
-            el.textContent = new Function(...Object.keys(this.scope), `return ${key}`)(...Object.values(this.scope));
+            el.textContent = new Function(...Object.keys(this.state), `return ${key}`)(...Object.values(this.state));
           } catch {
             el.textContent = '';
           }
@@ -56,13 +56,13 @@
         inputs.forEach(input => {
           const key = input.getAttribute('data-model');
           if (document.activeElement !== input) {
-            input.value = this.scope[key] || '';
+            input.value = this.state[key] || '';
           }
         });
       }
 
       set(key, value) {
-        this.scope[key] = value;
+        this.state[key] = value;
         this.updateView();
       }
     }
@@ -71,7 +71,7 @@
     const engine = new TemplateEngine({ name: 'Eko', score: 90 }, app);
 
     function changeScore() {
-      engine.set('score', engine.scope.score + 10);
+      engine.set('score', engine.state.score + 10);
     }
   </script>
 
