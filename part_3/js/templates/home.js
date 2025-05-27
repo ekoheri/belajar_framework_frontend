@@ -1,4 +1,4 @@
-import { Component } from '../../../part_2/js/component.js';
+import { Component } from '../component.js';
 
 export const homeComponent = (container) => {
   return new Component({

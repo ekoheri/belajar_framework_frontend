@@ -18,7 +18,7 @@ export class Component {
         this.engine = new TemplateEngine(this.state, this.root, di);
         this.attachEvents();
 
-        // 👇 Tambahan: mount callback
+        // Tambahan: mount callback
         if (typeof onMount === 'function') {
             onMount();
         }
